@@ -7,6 +7,8 @@ use Illuminate\Http\Response;
 use App\Models\UserProfile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserProfileController extends Controller
 {
@@ -38,10 +40,14 @@ class UserProfileController extends Controller
          //Varaible used to get the response status code which is used in the success response body
             $status = $response->getStatusCode();
 
+            //generate JWTAuth tokens
+            $token = JWTAuth::fromUser($userProfile);
+
         //return a response in json format
         return response()->json([
-                "message" => "user was successfully created",
                 "status" => $status,
+                "message" => "user was successfully created",
+                "token" => $token
         ], 201);
 
         //catch any errors
@@ -73,11 +79,20 @@ class UserProfileController extends Controller
         //Varaible used to get the response status code which is used in the success response body
         $status = $response->getStatusCode();
 
+       
+
+
         //Condition to check if the query and the password obtained are correct
         if($user && Hash::check($password, $user->password)){
+
+            //generate JWTAuth tokens
+            $token = JWTAuth::fromUser($user);
+
+            //return the response with the token generated.
             return response()->json([
-                "message" => "user was successfully logged in",
                 "status" => $status,
+                "message" => "user was successfully logged in",
+                "token" => $token
             ], 200);
         }
 
