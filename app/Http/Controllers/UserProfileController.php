@@ -3,16 +3,22 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use App\Services\JWTServices;
 use App\Models\UserProfile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
-use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Auth;
 
 class UserProfileController extends Controller
 {
-    public function signUp(Request $request, Response $response){
+    protected $jwtService;
+
+    public function __construct(JWTServices $jwtService)
+    {
+        $this->jwtService = $jwtService;
+    }
+
+    public function signUp(Request $request){
 
         try{
         //validate the requests
@@ -37,28 +43,30 @@ class UserProfileController extends Controller
         //save the userProfile instance
         $userProfile->save();
 
-         //Varaible used to get the response status code which is used in the success response body
-            $status = $response->getStatusCode();
+        //Authenticate the user
+        Auth::login($userProfile);
 
-            //generate JWTAuth tokens
-            $token = JWTAuth::fromUser($userProfile);
+        //generate JWTAuth tokens
+        $token = $this->jwtService->generate();
+
+        $tokenTTL = $this->jwtService->getTokenExpiry();
 
         //return a response in json format
         return response()->json([
-                "status" => $status,
                 "message" => "user was successfully created",
+                "expires_in" => $tokenTTL,
                 "token" => $token
         ], 201);
 
         //catch any errors
         } catch (\Exception $e) {
             Log::error('Error in signUp: ' . $e->getMessage());
-            return response()->json(['error' => 'An error occurred'], 500);
+            return response()->json(['error' => 'Username or email already exists'], 500);
         }
 
     }
 
-    public function login(Request $request, Response $response){
+    public function login(Request $request){
         try{
         
         //Validate the requests
@@ -76,22 +84,22 @@ class UserProfileController extends Controller
                     ->orWhere('username', $login)
                     ->first();
 
-        //Varaible used to get the response status code which is used in the success response body
-        $status = $response->getStatusCode();
-
-       
-
-
+    
         //Condition to check if the query and the password obtained are correct
         if($user && Hash::check($password, $user->password)){
 
+                //Authenticate the user
+                Auth::login($user);
+
             //generate JWTAuth tokens
-            $token = JWTAuth::fromUser($user);
+            $token = $this->jwtService->generate();
+
+            $tokenTTL = $this->jwtService->getTokenExpiry();
 
             //return the response with the token generated.
             return response()->json([
-                "status" => $status,
                 "message" => "user was successfully logged in",
+                "expires_in" =>$tokenTTL,
                 "token" => $token
             ], 200);
         }
