@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
 
 class JWTMiddleware
 {
@@ -18,9 +19,17 @@ class JWTMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         try{
-            $user = JWTAuth::parseToken()->authenticate();
+            $token = JWTAuth::getToken();
+            Log::info('Token: ', ['token' => (string)$token]);
 
-            if(!user){
+            $payload = JWTAuth::getPayload($token);
+            Log::info('Payload: ', ['payload' => $payload->toArray()]);
+
+            $user = JWTAuth::parseToken()->authenticate();
+            Log::info('User: ' , ['user' => $user]);
+
+
+            if(!$user){
                 return response()->json(['message' => 'user not found'], 500);
             }
         }catch(JWTException $e) {
