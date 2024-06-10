@@ -19,14 +19,17 @@ class JWTMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         try{
+
+            Log::info('Request headers: ', ['headers' => $request->headers->all()]);
+
             $token = JWTAuth::getToken();
             Log::info('Token: ', ['token' => (string)$token]);
 
             $payload = JWTAuth::getPayload($token);
             Log::info('Payload: ', ['payload' => $payload->toArray()]);
 
-            $user = JWTAuth::parseToken()->authenticate();
-            Log::info('User: ' , ['user' => $user]);
+            $user = auth()->user();
+            Log::info('User: ', ['user' => $user]);
 
 
             if(!$user){

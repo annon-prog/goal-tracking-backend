@@ -40,14 +40,14 @@ class UserProfileController extends Controller
             'password'=> Hash::make($password)
         ]);
 
+        Log::info('User registration: ', ['userProfile' => $userProfile]);
+
         //save the userProfile instance
         $userProfile->save();
 
-        //Authenticate the user
-        Auth::login($userProfile);
-
         //generate JWTAuth tokens
-        $token = $this->jwtService->generate();
+    $token = $this->jwtService->generate(['email' => $email, 'password' => $password]);
+
 
         $tokenTTL = $this->jwtService->getTokenExpiry();
 
@@ -60,7 +60,7 @@ class UserProfileController extends Controller
 
         //catch any errors
         } catch (\Exception $e) {
-            Log::error('Error in signUp: ' . $e->getMessage());
+            Log::error('Error in signUp: ', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Username or email already exists'], 500);
         }
 
@@ -79,20 +79,23 @@ class UserProfileController extends Controller
         $login = $request->input('login');
         $password =$request->input('password');
 
+        Log::info('Login Credentials', ['login' => $login, 'password' => $password]);
+
         //Db query to select user where the email or username is the request received
         $user = UserProfile::where('email', $login)
                     ->orWhere('username', $login)
                     ->first();
 
     
+        Log::info('User data', ['user' => $user]);
+
         //Condition to check if the query and the password obtained are correct
         if($user && Hash::check($password, $user->password)){
 
-                //Authenticate the user
-                Auth::login($user);
 
             //generate JWTAuth tokens
-            $token = $this->jwtService->generate();
+        $token = $this->jwtService->generate(['email' => $user->email, 'password' => $password]);
+        
 
             $tokenTTL = $this->jwtService->getTokenExpiry();
 
@@ -106,7 +109,8 @@ class UserProfileController extends Controller
 
         //catch  any errors
     } catch(\Exception $e){
-        Log::error("error during login", $e->getMessage());
+Log::error("error during login", ['error' => $e->getMessage()]);
+
         return response()->json(['error' => 'An error occured'], 500);
     }
     }
