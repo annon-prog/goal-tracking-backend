@@ -1,1 +1,0 @@
-Understanding how basic authentication happens in laravel 11
