@@ -8,8 +8,8 @@ Route::group([],function(){
     Route::post('/login', [UserProfileController::class, 'login'])->name('login');
     });
 
-Route::middleware([JWTMiddleware::class])->group(function(){
+Route::group([],function(){
     Route::get('/dashboard', function(){
         return response()->json(['message' =>'Welcome to the dashboard'], 200);
     });
-});
+})->middleware('token');
